@@ -5,9 +5,7 @@
   "main": "server.js",
   "scripts": {
     "dev": "nodemon src/server.js",
-    "build": "jsc",
-    "start": "node dist/server.js",
-    "test": "echo \"No tesjs yet\""
+    "start": "node src/server.js"
   },
   "keywords": [],
   "author": "",
