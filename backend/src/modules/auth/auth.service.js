@@ -84,9 +84,6 @@ async function registerService(email, password) {
   }
 }
 
-/* =========================
-   Login
-========================= */
 async function loginService(email, password) {
   const result = await db.query(AuthSQL.findUserByEmail, [email]);
 
@@ -116,9 +113,6 @@ async function loginService(email, password) {
   };
 }
 
-/* =========================
-   Verify OTP
-========================= */
 async function verifyOtpService(email, otp) {
   const userResult = await db.query(AuthSQL.findUserByEmail, [email]);
 
@@ -149,9 +143,6 @@ async function verifyOtpService(email, otp) {
   return { message: "Email verified successfully" };
 }
 
-/* =========================
-   Resend OTP
-========================= */
 async function resendOtpService(email) {
   const userResult = await db.query(AuthSQL.findUserByEmail, [email]);
 

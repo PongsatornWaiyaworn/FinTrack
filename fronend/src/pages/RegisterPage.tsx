@@ -102,8 +102,7 @@ export default function RegisterPage() {
         body: JSON.stringify({ email, otp }),
       });
 
-      login(data.token, data.user);
-      navigate("/dashboard", { replace: true });
+      navigate("/login", { replace: true });
     } catch {
       setError("Invalid or expired OTP.");
     } finally {
