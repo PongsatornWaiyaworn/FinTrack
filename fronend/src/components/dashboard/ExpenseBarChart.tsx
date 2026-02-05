@@ -1,143 +1,137 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+"use client";
+
 import {
   BarChart,
   Bar,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
+  CartesianGrid,
   ResponsiveContainer,
 } from "recharts";
-import { Expense } from "@/types/expense";
-import { format, parseISO, startOfMonth, eachDayOfInterval, eachMonthOfInterval, subDays } from "date-fns";
-import { useState } from "react";
+import { parseISO, format } from "date-fns";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 
-interface ExpenseBarChartProps {
-  expenses: Expense[];
-  startDate?: Date;
-  endDate?: Date;
-}
+type ExpenseWithCategory = {
+  id: string;
+  amount: number;
+  expense_date: string;
+  note?: string;
+  category?: {
+    id: string;
+    name: string;
+    color?: string | null;
+  } | null;
+};
 
-type ViewMode = "daily" | "monthly";
+type ViewMode = "daily" | "monthly" | "yearly";
 
-export function ExpenseBarChart({ expenses, startDate, endDate }: ExpenseBarChartProps) {
+export default function ExpenseChart({
+  expenses,
+}: {
+  expenses: ExpenseWithCategory[];
+}) {
   const [viewMode, setViewMode] = useState<ViewMode>("daily");
 
-  const generateChartData = () => {
+  const categories = useMemo(() => {
+    const map = new Map<string, { name: string; color: string }>();
+
+    expenses.forEach((e) => {
+      const name = e.category?.name ?? "Uncategorized";
+      const color = e.category?.color ?? "#94a3b8";
+
+      if (!map.has(name)) {
+        map.set(name, { name, color });
+      }
+    });
+
+    return Array.from(map.values());
+  }, [expenses]);
+
+  const chartData = useMemo(() => {
     if (expenses.length === 0) return [];
 
-    const expenseDates = expenses.map((e) => parseISO(e.expense_date));
-    const minDate = startDate || new Date(Math.min(...expenseDates.map((d) => d.getTime())));
-    const maxDate = endDate || new Date(Math.max(...expenseDates.map((d) => d.getTime())));
+    const getKey = (date: Date) => {
+      if (viewMode === "daily") return format(date, "yyyy-MM-dd");
+      if (viewMode === "monthly") return format(date, "yyyy-MM");
+      return format(date, "yyyy");
+    };
 
-    if (viewMode === "daily") {
-      const days = eachDayOfInterval({
-        start: minDate,
-        end: maxDate,
-      }).slice(-30); // Last 30 days max
+    const formatLabel = (key: string) => {
+      if (viewMode === "daily")
+        return format(parseISO(key), "dd MMM");
+      if (viewMode === "monthly")
+        return format(parseISO(`${key}-01`), "MMM yyyy");
+      return key;
+    };
 
-      return days.map((day) => {
-        const dayStr = format(day, "yyyy-MM-dd");
-        const total = expenses
-          .filter((e) => e.expense_date === dayStr)
-          .reduce((sum, e) => sum + Number(e.amount), 0);
+    const map = new Map<string, any>();
 
-        return {
-          date: format(day, "MMM dd"),
-          amount: total,
-        };
-      });
-    } else {
-      const months = eachMonthOfInterval({
-        start: startOfMonth(minDate),
-        end: startOfMonth(maxDate),
-      });
+    expenses.forEach((e) => {
+      const date = parseISO(e.expense_date);
+      const key = getKey(date);
+      const categoryName = e.category?.name ?? "Uncategorized";
 
-      return months.map((month) => {
-        const monthStr = format(month, "yyyy-MM");
-        const total = expenses
-          .filter((e) => e.expense_date.startsWith(monthStr))
-          .reduce((sum, e) => sum + Number(e.amount), 0);
+      if (!map.has(key)) {
+        map.set(key, { date: formatLabel(key) });
+      }
 
-        return {
-          date: format(month, "MMM yyyy"),
-          amount: total,
-        };
-      });
-    }
-  };
+      const row = map.get(key);
+      row[categoryName] =
+        (row[categoryName] || 0) + Number(e.amount);
+    });
 
-  const chartData = generateChartData();
-
-  if (chartData.length === 0) {
-    return (
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Expense Trend</CardTitle>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center h-[300px]">
-          <p className="text-muted-foreground">No data available</p>
-        </CardContent>
-      </Card>
-    );
-  }
+    return Array.from(map.values());
+  }, [expenses, viewMode]);
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Expense Trend</CardTitle>
-        <div className="flex gap-2">
-          <Button
-            variant={viewMode === "daily" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setViewMode("daily")}
-          >
-            Daily
-          </Button>
-          <Button
-            variant={viewMode === "monthly" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setViewMode("monthly")}
-          >
-            Monthly
-          </Button>
-        </div>
-      </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-            <XAxis
-              dataKey="date"
-              tick={{ fontSize: 12 }}
-              tickLine={false}
-              axisLine={false}
-            />
-            <YAxis
-              tick={{ fontSize: 12 }}
-              tickLine={false}
-              axisLine={false}
-              tickFormatter={(value) => `$${value}`}
-            />
-            <Tooltip
-              formatter={(value: number) => [
-                `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-                "Amount",
-              ]}
-              contentStyle={{
-                backgroundColor: "hsl(var(--card))",
-                border: "1px solid hsl(var(--border))",
-                borderRadius: "8px",
-              }}
-            />
-            <Bar
-              dataKey="amount"
-              fill="hsl(var(--primary))"
-              radius={[4, 4, 0, 0]}
-            />
-          </BarChart>
-        </ResponsiveContainer>
+        {/* View Mode */}
+        <div className="flex justify-end gap-2 mb-4">
+          {(["daily", "monthly", "yearly"] as ViewMode[]).map((mode) => (
+            <Button
+              key={mode}
+              size="sm"
+              variant={viewMode === mode ? "default" : "outline"}
+              onClick={() => setViewMode(mode)}
+            >
+              {mode.charAt(0).toUpperCase() + mode.slice(1)}
+            </Button>
+          ))}
+        </div>
+
+        <div className="h-[350px]">
+          {chartData.length === 0 ? (
+            <p className="text-center text-muted-foreground mt-20">
+              No expense data
+            </p>
+          ) : (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                <YAxis />
+                <Tooltip
+                  formatter={(value: number) =>
+                    `$${value.toLocaleString()}`
+                  }
+                />
+
+                {categories.map((cat) => (
+                  <Bar
+                    key={cat.name}
+                    dataKey={cat.name}
+                    fill={cat.color}
+                    radius={[4, 4, 0, 0]}
+                  />
+                ))}
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

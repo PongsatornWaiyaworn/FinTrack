@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useState } from "react";
 import { AuthContext, User } from "@/types/authContext";
 
@@ -8,11 +6,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const userRaw = localStorage.getItem("user");
+    const raw = localStorage.getItem("auth");
+    if (!raw) return;
 
-    if (token && userRaw) {
-      setUser(JSON.parse(userRaw));
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed?.token && parsed?.user) {
+        setToken(parsed.token);
+        setUser(parsed.user);
+      }
+    } catch {
+      console.warn("Invalid auth in localStorage");
+      localStorage.removeItem("auth");
     }
   }, []);
 
@@ -20,14 +25,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(token);
     setUser(user);
 
-    localStorage.setItem("token", token);
-    localStorage.setItem("user", JSON.stringify(user));
+    localStorage.setItem(
+      "auth",
+      JSON.stringify({ token, user })
+    );
   };
 
   const logout = () => {
-    localStorage.clear();
     setUser(null);
     setToken(null);
+    localStorage.removeItem("auth");
   };
 
   return (

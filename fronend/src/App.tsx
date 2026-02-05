@@ -9,10 +9,12 @@ import ExpensesPage from "./pages/ExpensesPage";
 import AddExpensePage from "./pages/AddExpensePage";
 import EditExpensePage from "./pages/EditExpensePage";
 import NotFound from "./pages/NotFound";
+import WelcomePage from "./pages/WelcomePage";
 
-import { AuthProvider } from "@/context/AuthProvider"; 
+import { AuthProvider } from "@/context/AuthProvider";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import ProtectedRoute from "@/routes/ProtectedRoute";
 
 const queryClient = new QueryClient();
 
@@ -24,13 +26,47 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/expenses" element={<ExpensesPage />} />
-            <Route path="/expenses/new" element={<AddExpensePage />} />
-            <Route path="/expenses/edit/:id" element={<EditExpensePage />} />
+            {/* Public */}
+            <Route path="/welcome" element={<WelcomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+
+            {/* Protected */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/expenses"
+              element={
+                <ProtectedRoute>
+                  <ExpensesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/expenses/new"
+              element={
+                <ProtectedRoute>
+                  <AddExpensePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/expenses/edit/:id"
+              element={
+                <ProtectedRoute>
+                  <EditExpensePage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Root */}
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

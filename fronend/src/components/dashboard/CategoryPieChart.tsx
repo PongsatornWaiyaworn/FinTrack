@@ -1,83 +1,98 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
-import { Expense } from "@/types/expense";
-
-const COLORS = [
-  "hsl(24, 100%, 50%)",   // Food - Orange
-  "hsl(210, 100%, 50%)",  // Transportation - Blue
-  "hsl(45, 100%, 50%)",   // Utilities - Yellow
-  "hsl(270, 100%, 60%)",  // Entertainment - Purple
-  "hsl(330, 100%, 60%)",  // Shopping - Pink
-  "hsl(0, 0%, 50%)",      // Other - Gray
-];
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Legend,
+  Tooltip,
+} from "recharts";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface CategoryPieChartProps {
-  expenses: Expense[];
+  expenses: ExpenseWithCategory[];
 }
 
+type ExpenseWithCategory = {
+  id: string;
+  amount: number;
+  expense_date: string;
+  note?: string;
+  category?: {
+    id: string;
+    name: string;
+    color?: string | null;
+  } | null;
+};
+
 export function CategoryPieChart({ expenses }: CategoryPieChartProps) {
-  const categoryData = expenses.reduce((acc, exp) => {
-    const existing = acc.find((item) => item.name === exp.category);
+
+  const categoryData = expenses.reduce<
+    { name: string; value: number; color: string }[]
+  >((acc, exp) => {
+    const name = exp.category?.name ?? "Uncategorized";
+    const color = exp.category?.color ?? "#94a3b8";
+
+    const existing = acc.find((i) => i.name === name);
     if (existing) {
       existing.value += Number(exp.amount);
     } else {
-      acc.push({ name: exp.category, value: Number(exp.amount) });
+      acc.push({
+        name,
+        value: Number(exp.amount),
+        color,
+      });
     }
+
     return acc;
-  }, [] as { name: string; value: number }[]);
+  }, []);
 
-  // Sort by value for consistent color assignment
   categoryData.sort((a, b) => b.value - a.value);
-
-  if (categoryData.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Expenses by Category</CardTitle>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center h-[300px]">
-          <p className="text-muted-foreground">No data available</p>
-        </CardContent>
-      </Card>
-    );
-  }
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Expenses by Category</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <PieChart>
-            <Pie
-              data={categoryData}
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              outerRadius={100}
-              fill="#8884d8"
-              dataKey="value"
-              label={({ name, percent }) =>
-                `${name} ${(percent * 100).toFixed(0)}%`
-              }
-            >
-              {categoryData.map((_, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={COLORS[index % COLORS.length]}
-                />
-              ))}
-            </Pie>
-            <Tooltip
-              formatter={(value: number) =>
-                `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-              }
-            />
-            <Legend />
-          </PieChart>
-        </ResponsiveContainer>
-      </CardContent>
-    </Card>
+  <CardContent className="h-[300px] flex items-center justify-center">
+    {categoryData.length === 0 ? (
+      <p className="text-muted-foreground">No data available</p>
+    ) : (
+      <ResponsiveContainer width="100%" height="100%">
+        <PieChart>
+          <Pie
+            data={categoryData}
+            cx="50%"
+            cy="50%"
+            innerRadius={40}
+            outerRadius={85}
+            dataKey="value"
+            paddingAngle={2}
+          >
+            {categoryData.map((entry) => (
+              <Cell
+                key={entry.name}
+                fill={entry.color}
+              />
+            ))}
+          </Pie>
+
+          <Tooltip
+            formatter={(value: number) =>
+              `$${value.toLocaleString("en-US", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}`
+            }
+          />
+
+          <Legend
+            verticalAlign="bottom"
+            height={36}
+            wrapperStyle={{
+              fontSize: "12px",
+            }}
+          />
+        </PieChart>
+      </ResponsiveContainer>
+    )}
+  </CardContent>
+</Card>
   );
 }

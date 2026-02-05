@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/types/AuthContext";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 import { apiFetch } from "@/lib/api";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -15,7 +17,7 @@ export default function LoginPage() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      setError("กรุณากรอกอีเมลและรหัสผ่าน");
+      setError("Please enter both email and password.");
       return;
     }
 
@@ -29,57 +31,86 @@ export default function LoginPage() {
       });
 
       login(data.token, data.user);
-      navigate("/", { replace: true });
+      navigate("/dashboard", { replace: true });
 
     } catch (err: any) {
       const message = err?.message;
 
       if (message === "Invalid credentials") {
-        setError("อีเมลหรือรหัสผ่านไม่ถูกต้อง");
+        setError("Invalid email or password.");
       } else if (message === "Please verify your email first") {
-        setError("กรุณายืนยันอีเมลก่อนเข้าสู่ระบบ");
+        setError("Please verify your email before logging in.");
       } else {
-        setError("ไม่สามารถเข้าสู่ระบบได้ กรุณาลองใหม่อีกครั้ง");
+        setError("Unable to sign in. Please try again.");
       }
-
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow space-y-4">
-        <h1 className="text-2xl font-bold text-center">Login</h1>
+    <div className="relative min-h-screen flex items-center justify-center bg-background overflow-hidden">
+      {/* subtle background */}
+      <div className="absolute inset-0 -z-10">
+        <div className="absolute top-[-20%] left-[-10%] h-[300px] w-[300px] rounded-full bg-gray-200/40 blur-3xl" />
+        <div className="absolute bottom-[-20%] right-[-10%] h-[300px] w-[300px] rounded-full bg-gray-300/30 blur-3xl" />
+      </div>
+
+      <div className="w-full max-w-sm rounded-xl bg-white p-8 shadow-sm space-y-6">
+        {/* Logo */}
+        <div className="text-center space-y-1">
+          <h1 className="text-3xl font-semibold tracking-tight">
+            <span className="text-gray-900">Fin</span>
+            <span className="text-gray-400">Track</span>
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Sign in to manage your expenses
+          </p>
+        </div>
 
         {error && (
           <p className="text-sm text-red-500 text-center">{error}</p>
         )}
 
-        <input
-          className="w-full border p-2 rounded"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          disabled={loading}
-        />
+        {/* Form */}
+        <div className="space-y-4">
+          <Input
+            type="email"
+            placeholder="Email address"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={loading}
+          />
 
-        <input
-          type="password"
-          className="w-full border p-2 rounded"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          disabled={loading}
-        />
+          <Input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            disabled={loading}
+          />
+        </div>
 
-        <button
+        {/* Action */}
+        <Button
           onClick={handleLogin}
           disabled={loading}
-          className="w-full rounded bg-black text-white py-2 disabled:opacity-50"
+          className="w-full"
+          size="lg"
         >
-          {loading ? "กำลังเข้าสู่ระบบ..." : "Login"}
-        </button>
+          {loading ? "Signing in..." : "Sign In"}
+        </Button>
+
+        {/* Footer */}
+        <p className="text-sm text-center text-muted-foreground">
+          Don’t have an account?{" "}
+          <Link
+            to="/register"
+            className="font-medium text-primary hover:underline"
+          >
+            Create one
+          </Link>
+        </p>
       </div>
     </div>
   );

@@ -4,67 +4,85 @@ import { signToken } from "@/utils/jwt";
 import { generateOTP, hashOTP, compareOTP } from "@/utils/otp";
 import { sendOTPEmail } from "@/utils/mailer";
 import { AuthSQL } from "./auth.sql";
+import { DEFAULT_CATEGORIES } from "@/constant/defaultCategories";
 
 export async function registerService(email: string, password: string) {
-  const existing = await db.query(AuthSQL.findUserByEmail, [email]);
+  const client = await db.connect();
 
-  // =============================
-  // สมัครแล้ว
-  // =============================
-  if (existing.rowCount && existing.rowCount > 0) {
-    const user = existing.rows[0];
+  try {
+    await client.query("BEGIN");
 
-    // ✅ สมัคร + verify แล้ว
-    if (user.is_verified) {
+    const existing = await client.query(
+      AuthSQL.findUserByEmail,
+      [email]
+    );
+
+    if (existing.rowCount && existing.rowCount > 0) {
+      const user = existing.rows[0];
+
+      if (user.is_verified) {
+        await client.query("ROLLBACK");
+        return {
+          success: false,
+          status: "ALREADY_VERIFIED",
+          message: "Email already registered and verified",
+        };
+      }
+
+      const otp = generateOTP();
+      const otpHash = await hashOTP(otp);
+
+      await client.query(AuthSQL.createOTP, [user.id, otpHash]);
+      await sendOTPEmail(user.email, otp);
+
+      await client.query("COMMIT");
+
       return {
-        success: false,
-        status: "ALREADY_VERIFIED",
-        message: "Email already registered and verified",
+        success: true,
+        status: "OTP_RESENT",
+        message: "OTP resent to email",
+        data: { userId: user.id },
       };
     }
 
-    // 🔁 สมัครแล้ว แต่ยังไม่ verify → ส่ง OTP ใหม่
+    const hashedPassword = await hashPassword(password);
+
+    const userResult = await client.query(
+      AuthSQL.createUser,
+      [email, hashedPassword]
+    );
+
+    const user = userResult.rows[0];
+
+    for (const cat of DEFAULT_CATEGORIES) {
+      await client.query(
+        `INSERT INTO categories (user_id, name, color)
+         VALUES ($1, $2, $3)`,
+        [user.id, cat.name, cat.color]
+      );
+    }
+
     const otp = generateOTP();
     const otpHash = await hashOTP(otp);
 
-    await db.query(AuthSQL.createOTP, [user.id, otpHash]);
+    await client.query(AuthSQL.createOTP, [user.id, otpHash]);
     await sendOTPEmail(user.email, otp);
+
+    await client.query("COMMIT");
 
     return {
       success: true,
-      status: "OTP_RESENT",
-      message: "OTP resent to email",
+      status: "OTP_SENT",
+      message: "OTP sent to email",
       data: { userId: user.id },
     };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
   }
-
-  // =============================
-  // สมัครใหม่
-  // =============================
-  const hashedPassword = await hashPassword(password);
-
-  const userResult = await db.query(AuthSQL.createUser, [
-    email,
-    hashedPassword,
-  ]);
-
-  const user = userResult.rows[0];
-
-  const otp = generateOTP();
-  const otpHash = await hashOTP(otp);
-
-  await db.query(AuthSQL.createOTP, [user.id, otpHash]);
-  await sendOTPEmail(user.email, otp);
-
-  return {
-    success: true,
-    status: "OTP_SENT",
-    message: "OTP sent to email",
-    data: { userId: user.id },
-  };
 }
-
-// ================= LOGIN =================
 
 export async function loginService(email: string, password: string) {
   const result = await db.query(AuthSQL.findUserByEmail, [email]);
@@ -84,7 +102,10 @@ export async function loginService(email: string, password: string) {
     throw new Error("Invalid credentials");
   }
 
-  const token = signToken({ userId: user.id });
+  const token = signToken({
+    userId: user.id,
+    email: user.email,
+  });
 
   return {
     user: { id: user.id, email: user.email },
@@ -92,15 +113,22 @@ export async function loginService(email: string, password: string) {
   };
 }
 
-// ================= VERIFY OTP =================
-export async function verifyOtpService(userId: string, otp: string) {
-  const result = await db.query(AuthSQL.findLatestOTPByUser, [userId]);
+export async function verifyOtpService(email: string, otp: string) {
+  const userResult = await db.query(AuthSQL.findUserByEmail, [email]);
 
-  if (!result.rowCount || result.rowCount === 0) {
+  if (userResult.rowCount === 0) {
+    throw new Error("User not found");
+  }
+
+  const user = userResult.rows[0];
+
+  const otpResult = await db.query(AuthSQL.findLatestOTPByUser, [user.id]);
+
+  if (otpResult.rowCount === 0) {
     throw new Error("OTP not found");
   }
 
-  const record = result.rows[0];
+  const record = otpResult.rows[0];
 
   if (record.used) {
     throw new Error("OTP already used");
@@ -111,12 +139,11 @@ export async function verifyOtpService(userId: string, otp: string) {
   }
 
   const isValid = await compareOTP(otp, record.otp_hash);
-
   if (!isValid) {
     throw new Error("Invalid OTP");
   }
 
-  await db.query(AuthSQL.markUserVerified, [userId]);
+  await db.query(AuthSQL.markUserVerified, [user.id]);
   await db.query(AuthSQL.markOTPUsed, [record.id]);
 
   return { message: "Email verified successfully" };

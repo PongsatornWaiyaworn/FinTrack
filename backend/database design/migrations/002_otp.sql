@@ -6,7 +6,7 @@ CREATE TABLE otps (
   used BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 
-  CONSTRAINT fk_user
+  CONSTRAINT fk_otp_user
     FOREIGN KEY (user_id)
     REFERENCES users(id)
     ON DELETE CASCADE

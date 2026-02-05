@@ -22,7 +22,8 @@
     "nodemailer": "^7.0.13",
     "pg": "^8.18.0",
     "tsconfig-paths": "^4.2.0",
-    "uuid": "^13.0.0"
+    "uuid": "^13.0.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/bcrypt": "^6.0.0",

@@ -1,6 +1,7 @@
-import { createContext, useContext } from "react";
+import { createContext } from "react";
 
 export interface User {
+  id: string;
   email: string;
 }
 
@@ -11,12 +12,9 @@ export interface AuthContextType {
   logout: () => void;
 }
 
-export const AuthContext = createContext<AuthContextType | null>(null);
-
-export const useAuth = () => {
-  const ctx = useContext(AuthContext);
-  if (!ctx) {
-    throw new Error("useAuth must be used inside AuthProvider");
-  }
-  return ctx;
-};
+export const AuthContext = createContext<AuthContextType>({
+  user: null,
+  token: null,
+  login: () => {},
+  logout: () => {},
+});

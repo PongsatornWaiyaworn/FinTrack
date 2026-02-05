@@ -1,5 +1,4 @@
 export const AuthSQL = {
-  // ===== USERS =====
   findUserByEmail: `
     SELECT id, email, password, is_verified
     FROM users
@@ -18,7 +17,6 @@ export const AuthSQL = {
     WHERE id = $1
   `,
 
-  // ===== OTP =====
   createOTP: `
     INSERT INTO otps (user_id, otp_hash, expires_at)
     VALUES ($1, $2, now() + interval '5 minutes')

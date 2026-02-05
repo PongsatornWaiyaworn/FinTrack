@@ -1,74 +1,68 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { Plus } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ExpenseTable } from "@/components/expenses/ExpenseTable";
-import { ExpenseFilters } from "@/components/expenses/ExpenseFilters";
-import { ExpenseSummary } from "@/components/expenses/ExpenseSummary";
+import { SummaryCards } from "@/components/dashboard/SummaryCards";
 import { DeleteExpenseDialog } from "@/components/expenses/DeleteExpenseDialog";
-import { Button } from "@/components/ui/button";
+import { ExpenseFilters as ExpenseFiltersPanel } from "@/components/expenses/ExpenseFilters";
+
 import { useExpenses, useDeleteExpense } from "@/hooks/useExpenses";
-import { Expense, ExpenseFilters as FilterType } from "@/types/expense";
+import { useExpenseCategories } from "@/hooks/useExpenseCategories";
 import { exportToCSV } from "@/lib/csv-export";
 
+import type { Expense, ExpenseFilters } from "@/types/expense";
+
+const defaultFilters: ExpenseFilters = {
+  sortField: "expense_date",
+  sortDirection: "desc",
+};
+
 export default function ExpensesPage() {
-  const [filters, setFilters] = useState<FilterType>({
-    sortField: "expense_date",
-    sortDirection: "desc",
-  });
+  const [filters, setFilters] = useState<ExpenseFilters>(defaultFilters);
   const [deleteExpense, setDeleteExpense] = useState<Expense | null>(null);
 
   const { data: expenses = [], isLoading } = useExpenses(filters);
+  const { categories, loading: categoryLoading } = useExpenseCategories();
   const deleteMutation = useDeleteExpense();
 
+  const categoryMap = new Map(categories.map((c) => [c.id, c]));
+
+  const expensesWithCategory = expenses.map((exp) => ({
+    ...exp,
+    category: categoryMap.get(exp.category_id) ?? null,
+  }));
+
   const handleExport = () => {
-    if (expenses.length > 0) {
-      exportToCSV(expenses);
+    if (expensesWithCategory.length > 0) {
+      exportToCSV(expensesWithCategory);
     }
   };
 
   const handleDeleteConfirm = () => {
-    if (deleteExpense) {
-      deleteMutation.mutate(deleteExpense.id, {
-        onSuccess: () => setDeleteExpense(null),
-      });
-    }
+    if (!deleteExpense) return;
+
+    deleteMutation.mutate(deleteExpense.id, {
+      onSuccess: () => setDeleteExpense(null),
+    });
   };
 
   return (
     <AppLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Expenses</h1>
-            <p className="text-muted-foreground">
-              Manage and track your expenses
-            </p>
-          </div>
-          <Button asChild>
-            <Link to="/expenses/new">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Expense
-            </Link>
-          </Button>
-        </div>
-
         {/* Filters */}
-        <ExpenseFilters
+        <ExpenseFiltersPanel
           filters={filters}
           onFiltersChange={setFilters}
           onExport={handleExport}
         />
 
         {/* Summary */}
-        <ExpenseSummary expenses={expenses} />
+        <SummaryCards expenses={expensesWithCategory} />
 
         {/* Table */}
         <ExpenseTable
-          expenses={expenses}
+          expenses={expensesWithCategory}
           onDelete={setDeleteExpense}
-          isLoading={isLoading}
+          isLoading={isLoading || categoryLoading}
         />
 
         {/* Delete Dialog */}

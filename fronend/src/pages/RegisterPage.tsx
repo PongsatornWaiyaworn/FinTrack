@@ -1,7 +1,9 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { apiFetch } from "@/lib/api";
-import { useAuth } from "@/types/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 type Step = "register" | "otp";
 
@@ -14,31 +16,51 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [otp, setOtp] = useState("");
-  const [userId, setUserId] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  const [timeLeft, setTimeLeft] = useState(0); // seconds
+
+  /* ---------------- OTP Countdown ---------------- */
+  useEffect(() => {
+    if (step !== "otp" || timeLeft <= 0) return;
+
+    const timer = setInterval(() => {
+      setTimeLeft((t) => t - 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [step, timeLeft]);
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  };
+
+  /* ---------------- Register ---------------- */
   const requestOtp = async () => {
     if (!email || !password || !confirmPassword) {
-      setError("กรุณากรอกข้อมูลให้ครบถ้วน");
+      setError("Please complete all required fields.");
       return;
     }
 
     if (password.length < 8) {
-      setError("รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร");
+      setError("Password must be at least 8 characters.");
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("รหัสผ่านไม่ตรงกัน");
+      setError("Passwords do not match.");
       return;
     }
 
     try {
       setLoading(true);
       setError("");
+      setSuccess("");
 
       const data = await apiFetch("/auth/register", {
         method: "POST",
@@ -46,45 +68,28 @@ export default function RegisterPage() {
       });
 
       if (data.status === "ALREADY_VERIFIED") {
-            setError("อีเมลนี้สมัครและยืนยันแล้ว กรุณาเข้าสู่ระบบ");
-            return;
-        }
+        setError("This email is already registered. Please sign in.");
+        return;
+      }
 
-      setUserId(data.userId);
       setStep("otp");
+      setTimeLeft(300); // 5 minutes
     } catch (err: any) {
-      setError(err.message || "สมัครสมาชิกไม่สำเร็จ");
+      setError(err.message || "Registration failed.");
     } finally {
       setLoading(false);
     }
   };
 
-  const resendOtp = async () => {
-        try {
-            setLoading(true);
-            setError("");
-
-            const data = await apiFetch("/auth/resend-otp", {
-            method: "POST",
-            body: JSON.stringify({ email }),
-            });
-
-            if (!data.success) {
-            setError(data.message);
-            return;
-            }
-
-            setSuccess("ส่ง OTP ใหม่เรียบร้อยแล้ว กรุณาตรวจสอบอีเมล");
-        } catch (err: any) {
-            setError(err.message || "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้");
-        } finally {
-            setLoading(false);
-        }
-    };
-
+  /* ---------------- Verify OTP ---------------- */
   const verifyOtp = async () => {
     if (!otp) {
-      setError("กรุณากรอก OTP");
+      setError("Please enter the OTP.");
+      return;
+    }
+
+    if (timeLeft <= 0) {
+      setError("OTP has expired. Please request a new one.");
       return;
     }
 
@@ -94,95 +99,159 @@ export default function RegisterPage() {
 
       const data = await apiFetch("/auth/verify-otp", {
         method: "POST",
-        body: JSON.stringify({ userId, otp }),
+        body: JSON.stringify({ email, otp }),
       });
 
       login(data.token, data.user);
-      navigate("/", { replace: true });
+      navigate("/dashboard", { replace: true });
     } catch {
-      setError("OTP ไม่ถูกต้องหรือหมดอายุ");
+      setError("Invalid or expired OTP.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* ---------------- Resend OTP ---------------- */
+  const resendOtp = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      setSuccess("");
+
+      const data = await apiFetch("/auth/resend-otp", {
+        method: "POST",
+        body: JSON.stringify({ email }),
+      });
+
+      if (!data.success) {
+        setError(data.message);
+        return;
+      }
+
+      setSuccess("A new OTP has been sent to your email.");
+      setTimeLeft(300);
+    } catch (err: any) {
+      setError(err.message || "Unable to resend OTP.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="w-full max-w-sm space-y-4 rounded border p-6 shadow">
-        <h1 className="text-2xl font-bold text-center">
-          {step === "register" ? "Register" : "Verify OTP"}
-        </h1>
+    <div className="relative min-h-screen flex items-center justify-center bg-background overflow-hidden">
+      {/* subtle background */}
+      <div className="absolute inset-0 -z-10">
+        <div className="absolute top-[-20%] left-[-10%] h-[300px] w-[300px] rounded-full bg-gray-200/40 blur-3xl" />
+        <div className="absolute bottom-[-20%] right-[-10%] h-[300px] w-[300px] rounded-full bg-gray-300/30 blur-3xl" />
+      </div>
 
-        {error ? (
-            <p className="text-red-500 text-sm text-center">{error}</p>
-        ) : success ? (
-            <p className="text-green-600 text-sm text-center">{success}</p>
-        ) : null}
+      <div className="w-full max-w-sm rounded-xl bg-white p-8 shadow-sm space-y-6">
+        {/* Logo */}
+        <div className="text-center space-y-1">
+          <h1 className="text-3xl font-semibold tracking-tight">
+            <span className="text-gray-900">Fin</span>
+            <span className="text-gray-400">Track</span>
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {step === "register"
+              ? "Create your FinTrack account"
+              : "Verify your email address"}
+          </p>
+        </div>
 
+        {error && (
+          <p className="text-sm text-red-500 text-center">{error}</p>
+        )}
+
+        {success && (
+          <p className="text-sm text-green-600 text-center">{success}</p>
+        )}
+
+        {/* Register Step */}
         {step === "register" && (
-          <>
-            <input
-              className="w-full border p-2 rounded"
-              placeholder="Email"
+          <div className="space-y-4">
+            <Input
+              type="email"
+              placeholder="Email address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={loading}
             />
 
-            <input
+            <Input
               type="password"
-              className="w-full border p-2 rounded"
               placeholder="Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
             />
 
-            <input
+            <Input
               type="password"
-              className="w-full border p-2 rounded"
-              placeholder="Confirm Password"
+              placeholder="Confirm password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               disabled={loading}
             />
 
-            <button
+            <Button
               onClick={requestOtp}
               disabled={loading}
-              className="w-full rounded bg-black text-white py-2 disabled:opacity-50"
+              className="w-full"
+              size="lg"
             >
-              {loading ? "กำลังส่ง OTP..." : "Request OTP"}
-            </button>
-          </>
+              {loading ? "Sending OTP..." : "Create Account"}
+            </Button>
+
+            <p className="text-sm text-center text-muted-foreground">
+              Already have an account?{" "}
+              <Link
+                to="/login"
+                className="font-medium text-primary hover:underline"
+              >
+                Sign in
+              </Link>
+            </p>
+          </div>
         )}
 
+        {/* OTP Step */}
         {step === "otp" && (
-          <>
-            <input
-              className="w-full border p-2 rounded"
+          <div className="space-y-4">
+            <Input
               placeholder="Enter OTP"
               value={otp}
               onChange={(e) => setOtp(e.target.value)}
-              disabled={loading}
+              disabled={loading || timeLeft <= 0}
             />
 
-            <button
+            <div className="text-center text-sm text-muted-foreground">
+              {timeLeft > 0 ? (
+                <>OTP expires in <span className="font-medium">{formatTime(timeLeft)}</span></>
+              ) : (
+                <span className="text-red-500">
+                  OTP has expired. Please request a new one.
+                </span>
+              )}
+            </div>
+
+            <Button
               onClick={verifyOtp}
-              disabled={loading}
-              className="w-full rounded bg-black text-white py-2 disabled:opacity-50"
+              disabled={loading || timeLeft <= 0}
+              className="w-full"
+              size="lg"
             >
-              {loading ? "กำลังตรวจสอบ..." : "Verify OTP"}
-            </button>
+              {loading ? "Verifying..." : "Verify OTP"}
+            </Button>
 
             <button
               onClick={resendOtp}
               disabled={loading}
-              className="w-full text-sm text-gray-600 underline disabled:opacity-50"
+              className="w-full text-sm text-muted-foreground hover:underline disabled:opacity-50"
             >
-              ส่ง OTP อีกครั้ง
+              Resend OTP
             </button>
-          </>
+          </div>
         )}
       </div>
     </div>

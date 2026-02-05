@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { LayoutDashboard, Receipt, PlusCircle } from "lucide-react";
-import { useAuth } from "@/types/authContext";
+import { useAuth } from "@/hooks/useAuth";
 import UserMenu from "@/components/layout/Navbar/UserMenu";
 
 interface AppLayoutProps {
