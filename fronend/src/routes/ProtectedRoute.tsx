@@ -1,23 +1,18 @@
 import { Navigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Props {
   children: JSX.Element;
 }
 
 export default function ProtectedRoute({ children }: Props) {
-  const [isAuth, setIsAuth] = useState<boolean | null>(null);
+  const { token } = useAuth();
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    setIsAuth(!!token);
-  }, []);
-
-  if (isAuth === null) {
-    return null; 
+  if (token === undefined) {
+    return null;
   }
 
-  if (!isAuth) {
+  if (!token) {
     return <Navigate to="/welcome" replace />;
   }
 
