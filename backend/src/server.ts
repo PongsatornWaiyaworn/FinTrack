@@ -1,15 +1,16 @@
 import "./config/env";
 import app from "./app";
+import cors from "cors";
 
-// app.use(cors({
-//   origin: ["http://localhost:5173", "https://fintrack-frontend.onrender.com"],
-//   credentials: true,
-// }));
+const PORT = process.env.PORT;
 
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN?.split(","),
+    credentials: process.env.CORS_CREDENTIALS === "true",
+  })
+);
 
-app.listen(4000, () => {
-  console.log("Server running on http://localhost:4000");
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
-function cors(arg0: { origin: string[]; credentials: boolean; }): any {
-    throw new Error("Function not implemented.");
-}
