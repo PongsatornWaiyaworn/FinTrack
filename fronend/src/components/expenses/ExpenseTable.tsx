@@ -35,15 +35,15 @@ export function ExpenseTable({
 }: ExpenseTableProps) {
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-48">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      <div className="flex h-48 items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
       </div>
     );
   }
 
   if (expenses.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
+      <div className="flex h-48 flex-col items-center justify-center text-muted-foreground">
         <p className="text-lg">No expenses found</p>
         <p className="text-sm">Start by adding your first expense</p>
       </div>
@@ -51,80 +51,147 @@ export function ExpenseTable({
   }
 
   return (
-    <div className="rounded-lg border bg-card overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Date</TableHead>
-            <TableHead>Category</TableHead>
-            <TableHead className="text-right">Amount</TableHead>
-            <TableHead>Note</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
+    <>
+      {/* ================= Desktop Table ================= */}
+      <div className="hidden md:block rounded-lg border bg-card overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Date</TableHead>
+              <TableHead>Category</TableHead>
+              <TableHead className="text-right">Amount</TableHead>
+              <TableHead>Note</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
 
-        <TableBody>
-          {expenses.map((expense) => {
-            const categoryName =
-              expense.category?.name ?? "Uncategorized";
-            const categoryColor =
-              expense.category?.color ?? "#e5e7eb";
+          <TableBody>
+            {expenses.map((expense) => {
+              const categoryName =
+                expense.category?.name ?? "Uncategorized";
+              const categoryColor =
+                expense.category?.color ?? "#e5e7eb";
 
-            return (
-              <TableRow key={expense.id}>
-                <TableCell className="font-medium">
-                  {format(new Date(expense.expense_date), "PP")}
-                </TableCell>
+              return (
+                <TableRow key={expense.id}>
+                  <TableCell className="font-medium">
+                    {format(new Date(expense.expense_date), "PP")}
+                  </TableCell>
 
-                <TableCell>
-                  <Badge
-                    variant="secondary"
-                    style={{
-                      backgroundColor: categoryColor,
-                      color: isDark(categoryColor) ? "#fff" : "#111",
-                      textShadow: isDark(categoryColor)
-                        ? "0 0 6px #fff, 0 1px 2px rgba(0,0,0,0.7)"
-                        : "0 1px 2px rgba(255,255,255,0.6)"
-                    }}
-                  >
-                    {categoryName}
-                  </Badge>
-                </TableCell>
-
-                <TableCell className="text-right font-mono">
-                  $
-                  {expense.amount.toLocaleString("en-US", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
-                </TableCell>
-
-                <TableCell className="max-w-[200px] truncate text-muted-foreground">
-                  {expense.note || "-"}
-                </TableCell>
-
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
-                    <Button variant="ghost" size="icon" asChild>
-                      <Link to={`/expenses/edit/${expense.id}`}>
-                        <Pencil className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onDelete(expense)}
-                      className="text-destructive hover:text-destructive"
+                  <TableCell>
+                    <Badge
+                      variant="secondary"
+                      style={{
+                        backgroundColor: categoryColor,
+                        color: isDark(categoryColor) ? "#fff" : "#111",
+                      }}
                     >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </div>
+                      {categoryName}
+                    </Badge>
+                  </TableCell>
+
+                  <TableCell className="text-right font-mono">
+                    $
+                    {expense.amount.toLocaleString("en-US", {
+                      minimumFractionDigits: 2,
+                    })}
+                  </TableCell>
+
+                  <TableCell className="max-w-[200px] truncate text-muted-foreground">
+                    {expense.note || "-"}
+                  </TableCell>
+
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button variant="ghost" size="icon" asChild>
+                        <Link to={`/expenses/edit/${expense.id}`}>
+                          <Pencil className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => onDelete(expense)}
+                        className="text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* ================= Mobile Cards ================= */}
+      <div className="md:hidden space-y-3">
+        {expenses.map((expense) => {
+          const categoryName =
+            expense.category?.name ?? "Uncategorized";
+          const categoryColor =
+            expense.category?.color ?? "#e5e7eb";
+
+          return (
+            <div
+              key={expense.id}
+              className="rounded-lg border bg-card p-4 space-y-3"
+            >
+              {/* Top row */}
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">
+                  {format(new Date(expense.expense_date), "PP")}
+                </span>
+
+                <Badge
+                  variant="secondary"
+                  style={{
+                    backgroundColor: categoryColor,
+                    color: isDark(categoryColor) ? "#fff" : "#111",
+                  }}
+                >
+                  {categoryName}
+                </Badge>
+              </div>
+
+              {/* Amount */}
+              <div className="text-lg font-mono font-semibold">
+                $
+                {expense.amount.toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                })}
+              </div>
+
+              {/* Note */}
+              {expense.note && (
+                <p className="text-sm text-muted-foreground line-clamp-2">
+                  {expense.note}
+                </p>
+              )}
+
+              {/* Actions */}
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" size="sm" asChild>
+                  <Link to={`/expenses/edit/${expense.id}`}>
+                    <Pencil className="mr-1 h-4 w-4" />
+                    Edit
+                  </Link>
+                </Button>
+
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => onDelete(expense)}
+                >
+                  <Trash2 className="mr-1 h-4 w-4" />
+                  Delete
+                </Button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </>
   );
 }

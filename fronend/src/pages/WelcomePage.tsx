@@ -3,14 +3,14 @@ import { Button } from "@/components/ui/button";
 
 export default function WelcomePage() {
   return (
-    <div className="relative min-h-screen flex items-center justify-center bg-background overflow-hidden">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background">
       {/* subtle background decoration */}
       <div className="absolute inset-0 -z-10">
-        <div className="absolute top-[-20%] left-[-10%] h-[400px] w-[400px] rounded-full bg-gray-200/40 blur-3xl" />
+        <div className="absolute left-[-10%] top-[-20%] h-[400px] w-[400px] rounded-full bg-gray-200/40 blur-3xl" />
         <div className="absolute bottom-[-20%] right-[-10%] h-[400px] w-[400px] rounded-full bg-gray-300/30 blur-3xl" />
       </div>
 
-      <div className="max-w-2xl text-center space-y-8 px-6">
+      <div className="max-w-2xl space-y-8 px-6 text-center">
         {/* Logo */}
         <h1 className="text-5xl font-semibold tracking-tight">
           <span className="text-gray-900">Fin</span>
@@ -18,22 +18,25 @@ export default function WelcomePage() {
         </h1>
 
         {/* Headline */}
-        <h2 className="text-2xl sm:text-3xl font-medium text-gray-900">
-          Track your expenses.  
+        <h2 className="text-2xl font-medium text-gray-900 sm:text-3xl">
+          Track your expenses.
           <span className="block text-gray-500">
-            Understand your financial habits.
+            Gain clarity over your finances.
           </span>
         </h2>
 
         {/* Description */}
-        <p className="text-base sm:text-lg text-muted-foreground leading-relaxed">
-          FinTrack is a smart expense tracking platform that helps you monitor
-          spending, analyze financial behavior, and gain clear insights into
-          your personal finances — all in one place.
+        <p className="text-base leading-relaxed text-muted-foreground sm:text-lg">
+          FinTrack is an expense tracking platform designed for{" "}
+          <span className="font-medium text-gray-700">
+            everyday life, office work, and small teams
+          </span>
+          . Easily monitor spending, analyze financial behavior, and understand
+          where your money goes — all in one simple and secure system.
         </p>
 
         {/* Actions */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+        <div className="flex flex-col items-center justify-center gap-4 pt-4 sm:flex-row">
           <Button size="lg" asChild>
             <Link to="/login">Get Started</Link>
           </Button>
@@ -44,9 +47,17 @@ export default function WelcomePage() {
         </div>
 
         {/* Footer note */}
-        <p className="text-sm text-muted-foreground pt-6">
-          Simple. Secure. Designed for everyday finance tracking.
-        </p>
+        <div className="space-y-2 pt-6">
+          <p className="text-sm text-muted-foreground">
+            Simple. Secure. Built for real-world financial tracking.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Developed by{" "}
+            <span className="font-medium text-gray-700">
+              Pongsatorn Waiyaworn
+            </span>
+          </p>
+        </div>
       </div>
     </div>
   );
