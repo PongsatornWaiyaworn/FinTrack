@@ -1,9 +1,8 @@
-import { db } from "@/config/db";
-import { CreateCategoryDto, UpdateCategoryDto } from "./category.schema";
-import { DEFAULT_CATEGORIES } from "@/constant/defaultCategories";
-import { CategorySQL } from "./category.sql";
+const { db } = require("../../config/db");
+const { DEFAULT_CATEGORIES } = require("../../constant/defaultCategories");
+const { CategorySQL } = require("./category.sql");
 
-export async function getCategoriesService(userId: string) {
+async function getCategoriesService(userId) {
   const { rows } = await db.query(
     CategorySQL.getAllByUser,
     [userId]
@@ -11,10 +10,7 @@ export async function getCategoriesService(userId: string) {
   return rows;
 }
 
-export async function getCategoryByIdService(
-  userId: string,
-  categoryId: string
-) {
+async function getCategoryByIdService(userId, categoryId) {
   const { rows } = await db.query(
     CategorySQL.getById,
     [categoryId, userId]
@@ -22,10 +18,7 @@ export async function getCategoryByIdService(
   return rows[0];
 }
 
-export async function createCategoryService(
-  userId: string,
-  data: CreateCategoryDto
-) {
+async function createCategoryService(userId, data) {
   const { rows } = await db.query(
     CategorySQL.create,
     [userId, data.name, data.color ?? null]
@@ -33,11 +26,7 @@ export async function createCategoryService(
   return rows[0];
 }
 
-export async function updateCategoryService(
-  userId: string,
-  categoryId: string,
-  data: UpdateCategoryDto
-) {
+async function updateCategoryService(userId, categoryId, data) {
   const { rows } = await db.query(
     CategorySQL.update,
     [
@@ -50,17 +39,14 @@ export async function updateCategoryService(
   return rows[0];
 }
 
-export async function deleteCategoryService(
-  userId: string,
-  categoryId: string
-) {
+async function deleteCategoryService(userId, categoryId) {
   await db.query(
     CategorySQL.delete,
     [categoryId, userId]
   );
 }
 
-export async function createDefaultCategories(userId: string) {
+async function createDefaultCategories(userId) {
   for (const cat of DEFAULT_CATEGORIES) {
     await db.query(
       CategorySQL.create,
@@ -69,23 +55,7 @@ export async function createDefaultCategories(userId: string) {
   }
 }
 
-type BulkPayload = {
-  create: {
-    name: string;
-    color?: string | null;
-  }[];
-  update: {
-    id: string;
-    name?: string;
-    color?: string | null;
-  }[];
-  delete: string[];
-};
-
-export async function bulkUpdateCategoryService(
-  userId: string,
-  data: BulkPayload
-) {
+async function bulkUpdateCategoryService(userId, data) {
   const { create, update, delete: del } = data;
 
   // CREATE
@@ -112,3 +82,13 @@ export async function bulkUpdateCategoryService(
     await db.query(CategorySQL.delete, [id, userId]);
   }
 }
+
+module.exports = {
+  getCategoriesService,
+  getCategoryByIdService,
+  createCategoryService,
+  updateCategoryService,
+  deleteCategoryService,
+  createDefaultCategories,
+  bulkUpdateCategoryService,
+};

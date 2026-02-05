@@ -1,34 +1,37 @@
-import { Request, Response } from "express";
-import {
+const {
   loginService,
   registerService,
   resendOtpService,
   verifyOtpService,
-} from "./auth.service";
+} = require("./auth.service");
 
-export const register = async (req: Request, res: Response) => {
+const register = async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return res.status(400).json({ message: "email and password are required" });
+    return res
+      .status(400)
+      .json({ message: "email and password are required" });
   }
 
   const data = await registerService(email, password);
   res.status(201).json(data); // { userId }
 };
 
-export const login = async (req: Request, res: Response) => {
+const login = async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return res.status(400).json({ message: "email and password are required" });
+    return res
+      .status(400)
+      .json({ message: "email and password are required" });
   }
 
   const data = await loginService(email, password);
   res.json(data);
 };
 
-export const verifyOtp = async (req: Request, res: Response) => {
+const verifyOtp = async (req, res) => {
   const { email, otp } = req.body;
 
   if (!email || !otp) {
@@ -47,12 +50,12 @@ export const verifyOtp = async (req: Request, res: Response) => {
   } catch (error) {
     res.status(400).json({
       success: false,
-      message: (error as Error).message,
+      message: error.message,
     });
   }
 };
 
-export const resendOtp = async (req: Request, res: Response) => {
+const resendOtp = async (req, res) => {
   const { email } = req.body;
 
   if (!email) {
@@ -64,4 +67,11 @@ export const resendOtp = async (req: Request, res: Response) => {
 
   const result = await resendOtpService(email);
   res.json(result);
+};
+
+module.exports = {
+  register,
+  login,
+  verifyOtp,
+  resendOtp,
 };

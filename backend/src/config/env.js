@@ -1,7 +1,4 @@
-import dotenv from "dotenv";
-dotenv.config();
-
-function required(key: string): string {
+function required(key) {
   const value = process.env[key];
   if (!value) {
     throw new Error(`Missing environment variable: ${key}`);
@@ -9,9 +6,8 @@ function required(key: string): string {
   return value;
 }
 
-const env = {
-  NODE_ENV: process.env.NODE_ENV ?? "development",
+module.exports = {
+  NODE_ENV: process.env.NODE_ENV || "development",
   JWT_SECRET: required("JWT_SECRET"),
 };
 
-export default env;

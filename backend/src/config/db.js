@@ -1,12 +1,12 @@
-import { Pool } from "pg";
+const { Pool } = require("pg");
 
-export const db = new Pool({
+const db = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false,
-  },
+  ssl: { rejectUnauthorized: false },
 });
 
 db.on("connect", () => {
   console.log("Connected to PostgreSQL");
 });
+
+module.exports = { db };

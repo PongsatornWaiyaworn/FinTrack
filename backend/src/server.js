@@ -1,8 +1,8 @@
-import "./config/env";
-import app from "./app";
-import cors from "cors";
+require("dotenv").config();
+const app = require("./app");
+const cors = require("cors");
 
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 3000;
 
 app.use(
   cors({

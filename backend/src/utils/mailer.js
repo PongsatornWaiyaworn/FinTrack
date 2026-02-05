@@ -1,16 +1,16 @@
-import nodemailer from "nodemailer";
+const nodemailer = require("nodemailer");
 
-export const transporter = nodemailer.createTransport({
+const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: Number(process.env.SMTP_PORT),
-  secure: false,
+  secure: false, // true ถ้าใช้ port 465
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
 });
 
-export async function sendOTPEmail(email: string, otp: string) {
+async function sendOTPEmail(email, otp) {
   await transporter.sendMail({
     from: `"FinTrack" <${process.env.SMTP_USER}>`,
     to: email,
@@ -23,3 +23,8 @@ export async function sendOTPEmail(email: string, otp: string) {
     `,
   });
 }
+
+module.exports = {
+  transporter,
+  sendOTPEmail,
+};
