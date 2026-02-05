@@ -1,19 +1,14 @@
-import { Request, Response, NextFunction } from "express";
-import {
+const {
   getExpensesService,
   getExpenseByIdService,
   createExpenseService,
   updateExpenseService,
   deleteExpenseService,
-} from "./expense.service";
+} = require("./expense.service");
 
-export async function getExpenses(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
+async function getExpenses(req, res, next) {
   try {
-    const expenses = await getExpensesService(req.user!.id, {
+    const expenses = await getExpensesService(req.user.id, {
       startDate: req.query.startDate
         ? String(req.query.startDate)
         : undefined,
@@ -32,16 +27,12 @@ export async function getExpenses(
   }
 }
 
-export async function getExpenseById(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
+async function getExpenseById(req, res, next) {
   try {
     const expenseId = String(req.params.id);
 
     const expense = await getExpenseByIdService(
-      req.user!.id,
+      req.user.id,
       expenseId
     );
 
@@ -55,29 +46,25 @@ export async function getExpenseById(
   }
 }
 
-export async function createExpense(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
+async function createExpense(req, res, next) {
   try {
-    const expense = await createExpenseService(req.user!.id, req.body);
+    const expense = await createExpenseService(
+      req.user.id,
+      req.body
+    );
+
     res.status(201).json(expense);
   } catch (err) {
     next(err);
   }
 }
 
-export async function updateExpense(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
+async function updateExpense(req, res, next) {
   try {
     const expenseId = String(req.params.id);
 
     const expense = await updateExpenseService(
-      req.user!.id,
+      req.user.id,
       expenseId,
       req.body
     );
@@ -92,17 +79,21 @@ export async function updateExpense(
   }
 }
 
-export async function deleteExpense(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
+async function deleteExpense(req, res, next) {
   try {
     const expenseId = String(req.params.id);
 
-    await deleteExpenseService(req.user!.id, expenseId);
+    await deleteExpenseService(req.user.id, expenseId);
     res.status(204).send();
   } catch (err) {
     next(err);
   }
 }
+
+module.exports = {
+  getExpenses,
+  getExpenseById,
+  createExpense,
+  updateExpense,
+  deleteExpense,
+};

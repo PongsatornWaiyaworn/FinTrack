@@ -1,4 +1,4 @@
-export const AuthSQL = {
+const AuthSQL = {
   findUserByEmail: `
     SELECT id, email, password, is_verified
     FROM users
@@ -41,3 +41,5 @@ export const AuthSQL = {
     WHERE user_id = $1
   `,
 };
+
+module.exports = { AuthSQL };

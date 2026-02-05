@@ -1,34 +1,25 @@
-import { Request, Response, NextFunction } from "express";
-import {
+const {
   getCategoriesService,
   getCategoryByIdService,
   createCategoryService,
   updateCategoryService,
   deleteCategoryService,
   bulkUpdateCategoryService,
-} from "./category.service";
+} = require("./category.service");
 
-export async function getCategories(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
+async function getCategories(req, res, next) {
   try {
-    const categories = await getCategoriesService(req.user!.id);
+    const categories = await getCategoriesService(req.user.id);
     res.json(categories);
   } catch (err) {
     next(err);
   }
 }
 
-export async function getCategoryById(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
+async function getCategoryById(req, res, next) {
   try {
     const category = await getCategoryByIdService(
-      req.user!.id,
+      req.user.id,
       String(req.params.id)
     );
 
@@ -42,14 +33,10 @@ export async function getCategoryById(
   }
 }
 
-export async function createCategory(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
+async function createCategory(req, res, next) {
   try {
     const category = await createCategoryService(
-      req.user!.id,
+      req.user.id,
       req.body
     );
 
@@ -59,14 +46,10 @@ export async function createCategory(
   }
 }
 
-export async function updateCategory(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
+async function updateCategory(req, res, next) {
   try {
     const category = await updateCategoryService(
-      req.user!.id,
+      req.user.id,
       String(req.params.id),
       req.body
     );
@@ -81,14 +64,10 @@ export async function updateCategory(
   }
 }
 
-export async function deleteCategory(
-  req: Request,
-  res: Response,
-  next: NextFunction
-) {
+async function deleteCategory(req, res, next) {
   try {
     await deleteCategoryService(
-      req.user!.id,
+      req.user.id,
       String(req.params.id)
     );
 
@@ -98,15 +77,28 @@ export async function deleteCategory(
   }
 }
 
-export async function bulkUpdateCategory(req: Request, res: Response) {
-  const userId = req.user!.id;
-  const { create, update, delete: del } = req.body;
+async function bulkUpdateCategory(req, res, next) {
+  try {
+    const userId = req.user.id;
+    const { create, update, delete: del } = req.body;
 
-  await bulkUpdateCategoryService(userId, {
-    create: create ?? [],
-    update: update ?? [],
-    delete: del ?? [],
-  });
+    await bulkUpdateCategoryService(userId, {
+      create: create ?? [],
+      update: update ?? [],
+      delete: del ?? [],
+    });
 
-  res.json({ success: true });
+    res.json({ success: true });
+  } catch (err) {
+    next(err);
+  }
 }
+
+module.exports = {
+  getCategories,
+  getCategoryById,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+  bulkUpdateCategory,
+};

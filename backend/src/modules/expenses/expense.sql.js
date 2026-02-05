@@ -1,4 +1,4 @@
-export const ExpenseSQL = {
+const ExpenseSQL = {
   getByUser: `
     SELECT e.*
     FROM expenses e
@@ -38,3 +38,5 @@ export const ExpenseSQL = {
       AND user_id = $2
   `,
 };
+
+module.exports = { ExpenseSQL };

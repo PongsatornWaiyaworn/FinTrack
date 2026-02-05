@@ -1,12 +1,12 @@
-import { db } from "@/config/db";
-import { hashPassword, comparePassword } from "@/utils/hash";
-import { signToken } from "@/utils/jwt";
-import { generateOTP, hashOTP, compareOTP } from "@/utils/otp";
-import { sendOTPEmail } from "@/utils/mailer";
-import { AuthSQL } from "./auth.sql";
-import { DEFAULT_CATEGORIES } from "@/constant/defaultCategories";
+const { db } = require("../../config/db");
+const { hashPassword, comparePassword } = require("../../utils/hash");
+const { signToken } = require("../../utils/jwt");
+const { generateOTP, hashOTP, compareOTP } = require("../../utils/otp");
+const { sendOTPEmail } = require("../../utils/mailer");
+const { AuthSQL } = require("./auth.sql");
+const { DEFAULT_CATEGORIES } = require("../../constant/defaultCategories");
 
-export async function registerService(email: string, password: string) {
+async function registerService(email, password) {
   const client = await db.connect();
 
   try {
@@ -17,7 +17,7 @@ export async function registerService(email: string, password: string) {
       [email]
     );
 
-    if (existing.rowCount && existing.rowCount > 0) {
+    if (existing.rowCount > 0) {
       const user = existing.rows[0];
 
       if (user.is_verified) {
@@ -84,7 +84,10 @@ export async function registerService(email: string, password: string) {
   }
 }
 
-export async function loginService(email: string, password: string) {
+/* =========================
+   Login
+========================= */
+async function loginService(email, password) {
   const result = await db.query(AuthSQL.findUserByEmail, [email]);
 
   if (result.rowCount === 0) {
@@ -113,7 +116,10 @@ export async function loginService(email: string, password: string) {
   };
 }
 
-export async function verifyOtpService(email: string, otp: string) {
+/* =========================
+   Verify OTP
+========================= */
+async function verifyOtpService(email, otp) {
   const userResult = await db.query(AuthSQL.findUserByEmail, [email]);
 
   if (userResult.rowCount === 0) {
@@ -130,18 +136,12 @@ export async function verifyOtpService(email: string, otp: string) {
 
   const record = otpResult.rows[0];
 
-  if (record.used) {
-    throw new Error("OTP already used");
-  }
-
-  if (new Date(record.expires_at) < new Date()) {
+  if (record.used) throw new Error("OTP already used");
+  if (new Date(record.expires_at) < new Date())
     throw new Error("OTP expired");
-  }
 
   const isValid = await compareOTP(otp, record.otp_hash);
-  if (!isValid) {
-    throw new Error("Invalid OTP");
-  }
+  if (!isValid) throw new Error("Invalid OTP");
 
   await db.query(AuthSQL.markUserVerified, [user.id]);
   await db.query(AuthSQL.markOTPUsed, [record.id]);
@@ -149,7 +149,10 @@ export async function verifyOtpService(email: string, otp: string) {
   return { message: "Email verified successfully" };
 }
 
-export async function resendOtpService(email: string) {
+/* =========================
+   Resend OTP
+========================= */
+async function resendOtpService(email) {
   const userResult = await db.query(AuthSQL.findUserByEmail, [email]);
 
   if (userResult.rowCount === 0) {
@@ -195,3 +198,10 @@ export async function resendOtpService(email: string) {
     message: "New OTP sent to email",
   };
 }
+
+module.exports = {
+  registerService,
+  loginService,
+  verifyOtpService,
+  resendOtpService,
+};

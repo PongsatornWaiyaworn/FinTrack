@@ -1,4 +1,4 @@
-export const CategorySQL = {
+const CategorySQL = {
   getAllByUser: `
     SELECT * FROM categories
     WHERE user_id = $1
@@ -30,3 +30,5 @@ export const CategorySQL = {
     WHERE id = $1 AND user_id = $2
   `,
 };
+
+module.exports = { CategorySQL };

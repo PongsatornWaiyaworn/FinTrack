@@ -1,14 +1,14 @@
-import { Router } from "express";
-import { authMiddleware } from "@/middlewares/auth.middleware";
-import {
+const express = require("express");
+const { authMiddleware } = require("../../middlewares/auth.middleware");
+const {
   getExpenses,
   getExpenseById,
   createExpense,
   updateExpense,
   deleteExpense,
-} from "./expense.controller";
+} = require("./expense.controller");
 
-const router = Router();
+const router = express.Router();
 
 router.use(authMiddleware);
 
@@ -18,4 +18,4 @@ router.post("/", createExpense);
 router.put("/:id", updateExpense);
 router.delete("/:id", deleteExpense);
 
-export default router;
+module.exports = router;
