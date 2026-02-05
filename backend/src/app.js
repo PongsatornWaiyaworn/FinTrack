@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const express = require("express");
 const cors = require("cors");
 
@@ -7,20 +9,19 @@ const categoryRoute = require("./modules/category/category.route");
 
 const app = express();
 
-const allowedOrigins = process.env.CORS_ORIGIN
-  ? process.env.CORS_ORIGIN.split(",").map(o => o.trim())
-  : [];
+const allowedOrigins = process.env.CORS_ORIGIN || process.env.CORS_ORIGIN.split(",").map(o => o.trim());
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin) return callback(null, true); 
+      if (!origin) return callback(null, true);
 
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
 
-      return callback(new Error("Not allowed by CORS"));
+      console.warn("Blocked by CORS:", origin);
+      return callback(null, false);
     },
     credentials: true,
   })
